@@ -1,0 +1,95 @@
+{
+  "model": "qwen2.5-7b",
+  "quant": "Q4_K_M",
+  "file": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+  "threads": 4,
+  "started": 1793476587.3692076,
+  "phases": {
+    "decode": {
+      "command": [
+        "/home/ymalam/llama.cpp/build/bin/llama-bench",
+        "-m",
+        "/home/ymalam/models/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+        "-t",
+        "4",
+        "-p",
+        "0",
+        "-n",
+        "128",
+        "-r",
+        "3",
+        "-o",
+        "json"
+      ],
+      "started": 1793476587.3692076,
+      "seconds": 253.79268169403076,
+      "flags_before": "0x0",
+      "flags_after": "0x0",
+      "thermal": {
+        "samples": 243,
+        "max_temp_c": 76.8,
+        "min_arm_hz": 2400017408,
+        "live_flag_samples": 0
+      },
+      "exit_code": 0,
+      "throttled": false,
+      "stderr": ""
+    }
+  },
+  "bench": [
+    {
+      "build_commit": "5047748f1",
+      "build_number": 12017,
+      "cpu_info": "CPU",
+      "gpu_info": "",
+      "backends": "CPU",
+      "model_filename": "/home/ymalam/models/Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+      "model_type": "qwen2 7B Q4_K - Medium",
+      "model_size": 4677120000,
+      "model_n_params": 7615616512,
+      "n_batch": 2048,
+      "n_ubatch": 512,
+      "n_threads": 4,
+      "cpu_mask": "0x0",
+      "cpu_strict": false,
+      "poll": 50,
+      "type_k": "f16",
+      "type_v": "f16",
+      "n_gpu_layers": -1,
+      "n_cpu_moe": 0,
+      "split_mode": "layer",
+      "main_gpu": 0,
+      "no_kv_offload": false,
+      "flash_attn": -1,
+      "devices": "auto",
+      "tensor_split": "0.00",
+      "tensor_buft_overrides": "none",
+      "load_mode": "auto",
+      "lazy_mode": "auto",
+      "embeddings": false,
+      "no_op_offload": 0,
+      "no_host": false,
+      "repack": true,
+      "fit_target": 0,
+      "fit_min_ctx": 0,
+      "n_prompt": 0,
+      "n_gen": 128,
+      "n_depth": 0,
+      "test_time": "2026-10-31T19:58:03Z",
+      "avg_ns": 52211132041,
+      "stddev_ns": 427503056,
+      "avg_ts": 2.451695,
+      "stddev_ts": 0.020161,
+      "samples_ns": [
+        51722835554,
+        52517999635,
+        52392560935
+      ],
+      "samples_ts": [
+        2.47473,
+        2.43726,
+        2.44309
+      ]
+    }
+  ]
+}

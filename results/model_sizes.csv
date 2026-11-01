@@ -1,0 +1,8 @@
+file,bytes
+Llama-3.2-1B-Instruct-Q4_K_M.gguf,807694464
+Llama-3.2-3B-Instruct-Q4_K_M.gguf,2019377696
+Qwen2.5-1.5B-Instruct-Q2_K.gguf,676304992
+Qwen2.5-1.5B-Instruct-Q4_K_M.gguf,986048768
+Qwen2.5-1.5B-Instruct-Q5_K_M.gguf,1125050624
+Qwen2.5-1.5B-Instruct-Q8_0.gguf,1646573312
+Qwen2.5-7B-Instruct-Q4_K_M.gguf,4683074240
