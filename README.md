@@ -2,7 +2,7 @@
 
 **Is LLM decode on edge hardware limited by memory bandwidth?** I predicted decode speed from measured bandwidth and model size, compared the prediction with real runs on a Raspberry Pi 5, and explained the gap.
 
-**[Explore the results interactively](https://yaseenmlm.github.io/LLM-inference-characterization-raspi/site/)**
+**[Explore the results interactively](https://yaseenmalam.dev/LLM-inference-characterization-raspi/site/)**
 
 **Result:** at 4 threads, all 7 models ran at 86-93% of the predicted ceiling, across file sizes from 0.68 GB to 4.68 GB. None of the 25 configs exceeded it. With fewer threads, some models are limited by the CPU instead, so decode has two limits rather than one.
 
