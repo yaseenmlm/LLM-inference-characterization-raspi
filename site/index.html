@@ -3,192 +3,192 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Edge LLM Decode</title>
-<meta name="description" content="Measured LLM decode speed against the memory-bandwidth ceiling on a Raspberry Pi 5 and a Ryzen 7 7700X.">
+<title>LLM Decode on a Raspberry Pi 5</title>
+<meta name="description" content="A report on whether LLM decode on a Raspberry Pi 5 is limited by memory bandwidth, with a Ryzen 7 7700X for comparison.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Sans+3:wght@400;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
-  /* Layout: a single 920px reading column. Sections are separated by space and one hairline, never boxes. */
+  /* Layout: one 700px column like a printed report. Figures and tables share its width. */
   :root {
-    --bg: #fbfbf9; --ink: #141413; --muted: #6f6e69; --faint: #a9a8a1; --rule: #e8e7e2; --grid: #efeee9;
-    --blue: #2a6fd6; --orange: #e0612d; --grey-line: #cfcec7;
-    --serif: "Instrument Serif", Georgia, serif;
-    --sans: "Geist", system-ui, sans-serif;
-    --mono: "Geist Mono", ui-monospace, monospace;
+    --paper: #ffffff; --ink: #1b1b1b; --muted: #5f5f5f; --rule: #1b1b1b; --hair: #dcdcdc; --grid: #ededed;
+    --series-a: #1f5fae; --series-b: #c4541c; --other: #c2c2c2; --link: #1f5fae;
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: "Source Sans 3", system-ui, sans-serif;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #121211; --ink: #eeede9; --muted: #9c9b94; --faint: #6a6964; --rule: #2a2a27; --grid: #1f1f1d;
-      --blue: #5a9bf0; --orange: #f07a48; --grey-line: #3f3e3a;
+      --paper: #151515; --ink: #e6e6e6; --muted: #a0a0a0; --rule: #e6e6e6; --hair: #3a3a3a; --grid: #262626;
+      --series-a: #6ea3e6; --series-b: #e8875a; --other: #4d4d4d; --link: #8ab6ee;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #121211; --ink: #eeede9; --muted: #9c9b94; --faint: #6a6964; --rule: #2a2a27; --grid: #1f1f1d;
-    --blue: #5a9bf0; --orange: #f07a48; --grey-line: #3f3e3a;
+    --paper: #151515; --ink: #e6e6e6; --muted: #a0a0a0; --rule: #e6e6e6; --hair: #3a3a3a; --grid: #262626;
+    --series-a: #6ea3e6; --series-b: #e8875a; --other: #4d4d4d; --link: #8ab6ee;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
-  .page { max-width: 920px; margin: 0 auto; padding-block: 72px 96px;
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.65 var(--serif); }
+  .report { max-width: 700px; margin: 0 auto; padding-block: 64px 80px;
     padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  a { color: var(--link); text-underline-offset: 2px; }
 
-  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  h1 { font: 400 clamp(40px, 7vw, 68px)/1.02 var(--serif); letter-spacing: -.01em; margin: 18px 0 0; text-wrap: balance; }
-  h1 em { color: var(--muted); }
-  .lede { font-size: 18px; color: var(--muted); max-width: 60ch; margin: 22px 0 0; }
-  .lede code { font: 15px var(--mono); color: var(--ink); }
+  h1 { font-size: 30px; line-height: 1.25; font-weight: 600; margin: 0; text-wrap: balance; }
+  .byline { font-family: var(--sans); font-size: 15px; color: var(--muted); margin-top: 10px; }
+  .abstract { margin: 36px 0 0; padding: 0 0 0 0; }
+  .abstract h2 { font: 600 15px var(--sans); margin: 0 0 4px; }
+  .abstract p { margin: 0; }
+  h2 { font-size: 21px; font-weight: 600; margin: 48px 0 0; }
+  h3 { font-size: 17px; font-weight: 600; margin: 28px 0 0; }
+  p { margin: 12px 0 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  code { font: 15px ui-monospace, Menlo, Consolas, monospace; }
+  ul { margin: 12px 0 0; padding-left: 22px; }
+  li + li { margin-top: 6px; }
 
-  .figures { display: grid; grid-template-columns: repeat(4, 1fr); margin: 56px 0 0; border-top: 1px solid var(--rule); }
-  .figure { padding: 20px 20px 0 0; }
-  .figure + .figure { padding-left: 20px; border-left: 1px solid var(--rule); }
-  .figure .num { font: 400 40px/1 var(--serif); white-space: nowrap; }
-  .figure .cap { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.4; }
-  @media (max-width: 640px) {
-    .figures { grid-template-columns: 1fr 1fr; }
-    .figure:nth-child(3) { border-left: 0; padding-left: 0; }
-    .figure { padding-bottom: 20px; }
-  }
-
-  section { margin-top: 96px; }
-  section h2 { font: 400 32px/1.15 var(--serif); margin: 10px 0 0; text-wrap: balance; }
-  section > p { color: var(--muted); max-width: 62ch; margin: 12px 0 0; }
-
-  .toolbar { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 28px 0 8px; }
-  .seg { display: inline-flex; gap: 2px; align-items: center; }
-  .seg-label { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-right: 10px; }
-  .seg button { font: 500 13px var(--sans); color: var(--muted); background: none; border: 0; border-bottom: 1.5px solid transparent;
-    padding: 4px 6px; cursor: pointer; }
-  .seg button:hover { color: var(--ink); }
-  .seg button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
-  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 2px; }
-
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 28px; }
-  @media (max-width: 720px) { .pair { grid-template-columns: 1fr; } }
-  .panel-title { font: 500 13px var(--sans); color: var(--ink); }
-  .chart { position: relative; min-height: 280px; margin-top: 8px; }
-  .chart.tall { min-height: 340px; }
+  figure { margin: 28px 0 0; }
+  figcaption { font: 15px/1.5 var(--sans); color: var(--muted); margin-top: 8px; }
+  figcaption b { color: var(--ink); font-weight: 600; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 15px var(--sans); color: var(--muted); margin-bottom: 6px; }
+  .controls label { display: inline-flex; gap: 6px; align-items: center; }
+  select { font: 15px var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--hair); border-radius: 3px; padding: 2px 4px; }
+  select:focus-visible, a:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .pair { grid-template-columns: 1fr; } }
+  .panel-title { font: 600 14px var(--sans); text-align: center; }
+  .chart { position: relative; min-height: 260px; }
   .chart svg { display: block; overflow: visible; }
-  .chart text { font: 11px var(--mono); fill: var(--faint); }
-  .chart .lbl { font: 500 12px var(--sans); }
+  .chart text { font: 12px var(--sans); fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .chart .lbl { font-size: 12px; font-weight: 600; }
+  .tip { position: absolute; pointer-events: none; background: var(--paper); border: 1px solid var(--hair); padding: 6px 9px;
+    font: 13px/1.45 var(--sans); white-space: nowrap; z-index: 2; box-shadow: 0 2px 8px rgb(0 0 0 / .08); }
+  .tip .head { font-weight: 600; }
+  .failed { display: flex; align-items: center; justify-content: center; min-height: 260px; font: 14px var(--sans); color: var(--muted); }
 
-  .tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--rule); border-radius: 4px;
-    box-shadow: 0 6px 20px rgb(0 0 0 / .08); padding: 8px 10px; font-size: 13px; white-space: nowrap; z-index: 2; }
-  .tip .head { font-weight: 500; margin-bottom: 2px; }
-  .tip div:not(.head) { font: 12px var(--mono); color: var(--muted); }
-  .failed { display: flex; align-items: center; justify-content: center; min-height: 280px; color: var(--muted); font-size: 13px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font: 14px var(--sans); font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font: 15px/1.5 var(--sans); color: var(--muted); padding-bottom: 8px; }
+  caption b { color: var(--ink); font-weight: 600; }
+  thead tr { border-top: 1.5px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  tbody tr:last-child { border-bottom: 1.5px solid var(--rule); }
+  th { font-weight: 600; text-align: right; padding: 6px 10px; white-space: nowrap; }
+  td { text-align: right; padding: 4px 10px; white-space: nowrap; }
+  th:first-child, td:first-child, th.l, td.l { text-align: left; padding-left: 0; }
+  tr.group td { padding-top: 12px; font-weight: 600; text-align: left; }
+  .setup td, .setup th { text-align: left; white-space: normal; vertical-align: top; }
+  .setup td:first-child { padding-right: 18px; white-space: nowrap; }
 
-  details { margin-top: 96px; border-top: 1px solid var(--rule); padding-top: 20px; }
-  summary { cursor: pointer; font: 400 24px var(--serif); list-style: none; display: flex; justify-content: space-between; align-items: baseline; }
-  summary::-webkit-details-marker { display: none; }
-  summary::after { content: "Show"; font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  details[open] summary::after { content: "Hide"; }
-  .table-wrap { overflow-x: auto; margin-top: 20px; }
-  table { width: 100%; border-collapse: collapse; font: 13px var(--mono); }
-  th, td { padding: 8px 12px 8px 0; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
-  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; font-family: var(--sans); }
-  th { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); border-bottom-color: var(--rule); }
-  td.low { color: var(--orange); }
-
-  footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 8px 28px;
-    font-size: 13px; color: var(--muted); }
-  footer a { color: var(--ink); text-decoration-color: var(--faint); text-underline-offset: 3px; }
-  footer p { margin: 0; flex-basis: 100%; max-width: 62ch; }
+  .refs { font: 15px/1.6 var(--sans); }
+  .refs li + li { margin-top: 2px; }
 </style>
 </head>
 <body>
-<main class="page">
-  <div class="eyebrow">LLM inference · Raspberry Pi 5 and Ryzen 7 7700X</div>
-  <h1>Memory sets the ceiling. <em>It isn't always the limit.</em></h1>
-  <p class="lede">Each generated token reads about every model weight once, so decode speed can't beat <code>read bandwidth ÷ model size</code>. I predicted that ceiling from measured bandwidth, then ran 7 models on two machines to see how close they got.</p>
+<article class="report">
+  <h1>LLM decode on a Raspberry Pi 5: memory bandwidth as the limit</h1>
+  <div class="byline">Yaseen Malam · November 2026 · <a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi">Source code and data</a></div>
 
-  <div class="figures">
-    <div class="figure"><div class="num" id="f-pi4">—</div><div class="cap">of the ceiling on the Pi 5 at 4 threads</div></div>
-    <div class="figure"><div class="num" id="f-pc1">—</div><div class="cap">on the 7700X at 1 thread</div></div>
-    <div class="figure"><div class="num" id="f-pc8">—</div><div class="cap">on the 7700X at 8 threads</div></div>
-    <div class="figure"><div class="num" id="f-over">—</div><div class="cap">runs beat the ceiling</div></div>
-  </div>
-
-  <section id="ceiling">
-    <div class="eyebrow">01 · The prediction</div>
-    <h2>No run beats its ceiling</h2>
-    <p>Each dot is one model's measured decode speed. The dashed line is the ceiling for the picked machine and thread count. Both axes are log scales, so the ceiling is a straight line. On the Pi at 4 threads every model sits close to it. Pick the 7700X at 8 threads to see the gap open up.</p>
-    <div class="toolbar">
-      <div class="seg" role="group" aria-label="Machine">
-        <span class="seg-label">Machine</span>
-        <button class="machine" data-machine="pi" aria-pressed="true">Pi 5</button>
-        <button class="machine" data-machine="pc" aria-pressed="false">7700X</button>
-      </div>
-      <div class="seg" role="group" aria-label="Threads">
-        <span class="seg-label">Threads</span>
-        <button class="threads" data-threads="1" aria-pressed="false">1</button>
-        <button class="threads" data-threads="2" aria-pressed="false">2</button>
-        <button class="threads" data-threads="3" data-only="pi" aria-pressed="false">3</button>
-        <button class="threads" data-threads="4" aria-pressed="true">4</button>
-        <button class="threads" data-threads="6" data-only="pc" aria-pressed="false" hidden>6</button>
-        <button class="threads" data-threads="8" data-only="pc" aria-pressed="false" hidden>8</button>
-      </div>
-    </div>
-    <div class="chart tall" id="c-roofline"></div>
+  <section class="abstract">
+    <h2>Abstract</h2>
+    <p>Each token a language model generates reads about every weight once, so decode speed should not exceed read bandwidth divided by model size. I measured read bandwidth on a Raspberry Pi 5, used it to predict a decode ceiling for seven quantized models, and compared the prediction with llama.cpp runs. A Ryzen 7 7700X desktop ran the same workload for comparison. No run exceeded its ceiling (<span class="num" id="a-over">—</span> of <span class="num" id="a-total">—</span>). At 4 threads the Pi reached <span class="num" id="a-pi4">—</span> of the ceiling. The 7700X reached <span class="num" id="a-pc1">—</span> at 1 thread but only <span class="num" id="a-pc8">—</span> at 8, because its decode slowed as threads were added, by a cost per layer that does not depend on model size.</p>
   </section>
 
-  <section id="threads">
-    <div class="eyebrow">02 · Adding threads</div>
-    <h2>On the Pi, threads help until memory runs out. On the PC, they hurt.</h2>
-    <p>Decode speed for each model as threads are added, on one shared scale. On the Pi, Qwen Q2 is CPU-limited and keeps speeding up, while Qwen Q8 is memory-limited from the first thread. On the 7700X, 6 of 7 models are fastest at 1 or 2 threads.</p>
+  <h2>1 Method</h2>
+  <p>Generating one token streams the weights from memory once and does not write them, so the ceiling is</p>
+  <p style="text-align: center"><code>ceiling (tok/s) = read bandwidth (GB/s) ÷ model size (GB)</code></p>
+  <p>Read bandwidth comes from a custom read-only test that sums a 1 GiB block, split across threads. I used it rather than STREAM Triad, which also writes and underestimates the ceiling. Model size is the GGUF file size. Prefill and decode were measured in separate <code>llama-bench</code> calls with a 256-token prompt and 128 generated tokens, 3 repeats each. A run counted only if the CPU held its clock throughout. On the Pi that meant 2.4 GHz with no throttle flags, after a cooling test passed.</p>
+
+  <div class="table-wrap">
+    <table class="setup">
+      <caption><b>Table 1.</b> Test setup.</caption>
+      <thead><tr><th></th><th>Raspberry Pi 5</th><th>Desktop PC</th></tr></thead>
+      <tbody>
+        <tr><td>CPU</td><td>4 × Cortex-A76, 2.4 GHz</td><td>Ryzen 7 7700X, 8 cores, one thread per core</td></tr>
+        <tr><td>Memory</td><td>8 GB LPDDR4X</td><td>2 × 16 GB DDR5, reported at 3600 MT/s</td></tr>
+        <tr><td>OS and compiler</td><td>Debian 13, GCC 14.2</td><td>Windows 11, MinGW GCC 16.2</td></tr>
+        <tr><td>Threads tested</td><td>1–4</td><td>1, 2, 4, 6, 8</td></tr>
+        <tr><td>Inference</td><td colspan="2">llama.cpp <code>5047748</code>, CPU only, <code>-DGGML_NATIVE=ON</code></td></tr>
+        <tr><td>Models</td><td colspan="2">Qwen2.5 1.5B at Q2_K, Q4_K_M, Q5_K_M and Q8_0; Llama 3.2 1B and 3B at Q4_K_M; Qwen2.5 7B at Q4_K_M (Pi: 4 threads only)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2 Results</h2>
+
+  <h3>2.1 Read bandwidth</h3>
+  <p>Figure 1 shows the input to the ceiling. The Pi's bandwidth falls as threads are added, which I have not explained. The 7700X's rises from 1 to 2 threads and then stays roughly flat.</p>
+  <figure>
+    <div class="chart" id="c-bandwidth"></div>
+    <figcaption><b>Figure 1.</b> Read bandwidth against thread count, the mean of 3 repeats.</figcaption>
+  </figure>
+
+  <h3>2.2 Decode against the ceiling</h3>
+  <p>Figure 2 plots measured decode speed against model size, with the ceiling for the chosen machine and thread count. On log axes the ceiling is a straight line. On the Pi at 4 threads every model sits just below it. On the 7700X the gap widens as threads are added.</p>
+  <figure>
+    <div class="controls">
+      <label for="sel-machine">Machine <select id="sel-machine"><option value="pi">Raspberry Pi 5</option><option value="pc">Ryzen 7 7700X</option></select></label>
+      <label for="sel-threads">Threads <select id="sel-threads"></select></label>
+    </div>
+    <div class="chart" id="c-roofline"></div>
+    <figcaption><b>Figure 2.</b> Measured decode speed (points) and the predicted ceiling (dashed line), both axes logarithmic. Hover a point for its values.</figcaption>
+  </figure>
+
+  <h3>2.3 Thread scaling</h3>
+  <p>Adding threads adds compute but not bandwidth, so the shape of each line shows which limit applies. On the Pi, Qwen Q2 is limited by the CPU at low thread counts: it reaches <span class="num" id="t-q2pi1">—</span> of its ceiling at 1 thread and nearly doubles at 2. Qwen Q8 is limited by memory from the first thread, at <span class="num" id="t-q8pi1">—</span>. On the 7700X, decode is fastest at 1 or 2 threads for 6 of the 7 models.</p>
+  <figure>
     <div class="pair">
       <div><div class="panel-title">Raspberry Pi 5</div><div class="chart" id="c-pi-threads"></div></div>
       <div><div class="panel-title">Ryzen 7 7700X</div><div class="chart" id="c-pc-threads"></div></div>
     </div>
-  </section>
+    <figcaption><b>Figure 3.</b> Decode speed against thread count, on a shared scale. Qwen Q2 and Q8 are highlighted; the other five models are grey.</figcaption>
+  </figure>
 
-  <section id="overhead">
-    <div class="eyebrow">03 · Where the PC's time goes</div>
-    <h2>The lost time is per layer, not per byte</h2>
-    <p>Each token's time minus what the ceiling predicts, divided by the model's layer count. Q8 is 2.4 times the size of Q2, yet both lose the same time per layer. The loss grows with threads, which points to threads waiting for each other rather than to memory. Qwen 7B loses less, and I don't know why yet.</p>
+  <h3>2.4 The 7700X slowdown</h3>
+  <p>To see where the 7700X loses time, I subtracted the ceiling's predicted time per token from the measured time and divided by the model's layer count (Figure 4). If memory caused the loss, it would grow with model size. It does not: Qwen Q8 is 2.4 times the size of Q2, but at 8 threads both lose <span class="num" id="t-q2pl">—</span> and <span class="num" id="t-q8pl">—</span> ms per layer. The loss grows with thread count instead. The likely cause is threads waiting for each other after each step of a layer, which I have not measured. Qwen 7B loses less, and I have not explained why.</p>
+  <figure>
     <div class="chart" id="c-overhead"></div>
-  </section>
+    <figcaption><b>Figure 4.</b> 7700X decode time above the ceiling's prediction, per layer, against thread count.</figcaption>
+  </figure>
 
-  <section id="bandwidth">
-    <div class="eyebrow">04 · The input</div>
-    <h2>Read bandwidth, measured on each machine</h2>
-    <p>The mean of 3 repeats of a read-only test over 1 GiB. This is the number the ceiling divides by. The Pi's falls as threads are added. The PC's barely changes after 2 threads.</p>
-    <div class="chart" id="c-bandwidth"></div>
-  </section>
+  <h2>3 Limitations</h2>
+  <ul>
+    <li>The PC ran Windows with a different compiler, so its thread slowdown may come from that build rather than the 7700X.</li>
+    <li>The ceiling uses GGUF file size, which also includes metadata.</li>
+    <li>Pi temperatures were sampled at about 1 Hz, and the PC had no temperature log, only clock speed.</li>
+    <li>Qwen 7B prefill on the Pi could not be measured without tripping the soft temperature limit.</li>
+    <li>Part of the Pi sweep ran prefill and decode in one call, which moved decode by about 2% in two checks.</li>
+  </ul>
 
-  <details>
-    <summary>All 60 measurements</summary>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Machine</th><th>Model</th><th>Threads</th><th>Size GB</th><th>Ceiling</th><th>Measured</th><th>± SD</th><th>Share</th></tr></thead>
-        <tbody id="table-body"></tbody>
-      </table>
-    </div>
-  </details>
+  <h2>Appendix A. All measurements</h2>
+  <div class="table-wrap">
+    <table>
+      <caption><b>Table 2.</b> Decode speed for every configuration, in tokens per second, the mean of 3 repeats.</caption>
+      <thead><tr><th class="l">Model</th><th>Threads</th><th>Size (GB)</th><th>Ceiling</th><th>Measured</th><th>SD</th><th>% of ceiling</th></tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
 
-  <footer>
-    <a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi">Code and write-up</a>
-    <a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi/blob/main/docs/methodology.md">Methodology</a>
-    <a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi/tree/main/results">Raw data</a>
-    <p>Speeds are tokens per second, the mean of 3 repeats, loaded live from the repository's CSVs. The PC ran Windows with MinGW GCC 16.2, so its thread slowdown may come from that build rather than the chip.</p>
-  </footer>
-</main>
+  <h2>Sources</h2>
+  <ul class="refs">
+    <li><a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi">Repository</a>, with the README write-up and every script</li>
+    <li><a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi/blob/main/docs/methodology.md">Methodology</a>, including the cooling test history and rejected runs</li>
+    <li><a href="https://github.com/yaseenmlm/LLM-inference-characterization-raspi/tree/main/results">Raw results</a>, which this page reads directly</li>
+  </ul>
+</article>
 
 <script>
 const NAMES = {
-  'qwen2.5-1.5b|Q2_K': 'Qwen Q2', 'llama3.2-1b|Q4_K_M': 'Llama 1B', 'qwen2.5-1.5b|Q4_K_M': 'Qwen Q4',
-  'qwen2.5-1.5b|Q5_K_M': 'Qwen Q5', 'qwen2.5-1.5b|Q8_0': 'Qwen Q8', 'llama3.2-3b|Q4_K_M': 'Llama 3B',
-  'qwen2.5-7b|Q4_K_M': 'Qwen 7B',
+  'qwen2.5-1.5b|Q2_K': 'Qwen 1.5B Q2', 'llama3.2-1b|Q4_K_M': 'Llama 1B Q4', 'qwen2.5-1.5b|Q4_K_M': 'Qwen 1.5B Q4',
+  'qwen2.5-1.5b|Q5_K_M': 'Qwen 1.5B Q5', 'qwen2.5-1.5b|Q8_0': 'Qwen 1.5B Q8', 'llama3.2-3b|Q4_K_M': 'Llama 3B Q4',
+  'qwen2.5-7b|Q4_K_M': 'Qwen 7B Q4',
 };
-const LONG = { 'Qwen Q2': 'Qwen 1.5B Q2', 'Qwen Q4': 'Qwen 1.5B Q4', 'Qwen Q5': 'Qwen 1.5B Q5', 'Qwen Q8': 'Qwen 1.5B Q8',
-  'Llama 1B': 'Llama 1B Q4', 'Llama 3B': 'Llama 3B Q4', 'Qwen 7B': 'Qwen 7B Q4' };
-// Only the two models that carry the story get color. Everything else stays grey.
-const ACCENT = { 'Qwen Q2': 'var(--blue)', 'Qwen Q8': 'var(--orange)' };
+const SHORT = { 'Qwen 1.5B Q2': 'Q2', 'Qwen 1.5B Q8': 'Q8', 'Qwen 7B Q4': '7B' };
+// Only the two models the text discusses get color.
+const ACCENT = { 'Qwen 1.5B Q2': 'var(--series-a)', 'Qwen 1.5B Q8': 'var(--series-b)' };
 const THREADS = { pi: [1, 2, 3, 4], pc: [1, 2, 4, 6, 8] };
-const MACHINE = { pi: 'Pi 5', pc: '7700X' };
+const MACHINE = { pi: 'Raspberry Pi 5', pc: 'Ryzen 7 7700X' };
 const f1 = d3.format('.1f'), f2 = d3.format('.2f'), f3 = d3.format('.3f');
 const plural = (n) => `${n} ${n === 1 ? 'thread' : 'threads'}`;
 const state = { machine: 'pi', threads: 4 };
@@ -219,43 +219,42 @@ function textWidth(svg, text, cls) {
   return w;
 }
 
-// One chart. Series are drawn grey unless given a color; labelled series get a name at their last point.
+// A plain report figure: axis titles, light grid, grey series unless colored, end labels on named series.
 function chart(el, opt) {
   el.replaceChildren();
-  const W = Math.max(260, el.clientWidth), H = el.classList.contains('tall') ? 340 : 280;
+  const W = Math.max(260, el.clientWidth), H = 260;
   const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`)
     .attr('role', 'img').attr('aria-label', opt.label);
   const fmt = opt.fmtY || d3.format('~g');
   const labelled = opt.series.filter((s) => s.label && s.points.length);
-  const right = labelled.length ? d3.max(labelled, (s) => textWidth(svg, s.label, 'lbl')) + 12 : 8;
-  const left = d3.max(opt.yTicks, (t) => textWidth(svg, fmt(t))) + 10;
-  const m = { top: 24, right, bottom: 36, left };
+  const right = labelled.length ? d3.max(labelled, (s) => textWidth(svg, s.label, 'lbl')) + 12 : 10;
+  const tickW = d3.max(opt.yTicks, (t) => textWidth(svg, fmt(t)));
+  const m = { top: 10, right, bottom: 42, left: tickW + 30 };
   const x = (opt.logX ? d3.scaleLog() : d3.scaleLinear()).domain(opt.xDomain).range([m.left, W - m.right]);
   const y = (opt.logY ? d3.scaleLog() : d3.scaleLinear()).domain(opt.yDomain).range([H - m.bottom, m.top]);
 
-  svg.append('text').attr('x', 0).attr('y', 10).text(opt.yUnit);
   opt.yTicks.forEach((t) => {
     svg.append('line').attr('x1', m.left).attr('x2', W - m.right).attr('y1', y(t)).attr('y2', y(t)).style('stroke', 'var(--grid)');
-    svg.append('text').attr('x', m.left - 10).attr('y', y(t)).attr('dy', '0.32em').attr('text-anchor', 'end').text(fmt(t));
+    svg.append('text').attr('x', m.left - 6).attr('y', y(t)).attr('dy', '0.32em').attr('text-anchor', 'end').text(fmt(t));
   });
-  opt.xTicks.forEach((t) => svg.append('text').attr('x', x(t)).attr('y', H - m.bottom + 18).attr('text-anchor', 'middle').text(d3.format('~g')(t)));
-  svg.append('text').attr('x', W - m.right).attr('y', H - 2).attr('text-anchor', 'end').text(opt.xLabel);
+  svg.append('line').attr('x1', m.left).attr('x2', W - m.right).attr('y1', H - m.bottom).attr('y2', H - m.bottom).style('stroke', 'var(--muted)');
+  svg.append('line').attr('x1', m.left).attr('x2', m.left).attr('y1', m.top).attr('y2', H - m.bottom).style('stroke', 'var(--muted)');
+  opt.xTicks.forEach((t) => svg.append('text').attr('x', x(t)).attr('y', H - m.bottom + 16).attr('text-anchor', 'middle').text(d3.format('~g')(t)));
+  svg.append('text').attr('x', (m.left + W - m.right) / 2).attr('y', H - 4).attr('text-anchor', 'middle').text(opt.xLabel);
+  svg.append('text').attr('transform', `translate(10, ${(m.top + H - m.bottom) / 2}) rotate(-90)`).attr('text-anchor', 'middle').text(opt.yLabel);
 
-  // Grey series first, so colored ones sit on top.
   const order = [...opt.series].sort((a, b) => Boolean(a.color) - Boolean(b.color));
   const line = d3.line().x((p) => x(p.x)).y((p) => y(p.y));
   const points = [];
   order.forEach((s) => {
-    const stroke = s.color || 'var(--grey-line)';
+    const stroke = s.color || 'var(--other)';
     if (!s.dotsOnly) {
-      svg.append('path').attr('d', line(s.points)).style('fill', 'none').style('stroke', s.lineColor || stroke)
-        .attr('stroke-width', s.color ? 2 : 1.5).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
-        .attr('stroke-dasharray', s.dashed ? '5 5' : null);
+      svg.append('path').attr('d', line(s.points)).style('fill', 'none').style('stroke', stroke)
+        .attr('stroke-width', s.color ? 1.75 : 1.25).attr('stroke-dasharray', s.dashed ? '5 4' : null);
     }
     if (s.noDots) return;
     s.points.forEach((p) => {
-      svg.append('circle').attr('cx', x(p.x)).attr('cy', y(p.y)).attr('r', s.dotsOnly ? 5 : (s.color ? 3 : 2.5))
-        .style('fill', stroke).style('stroke', 'var(--bg)').attr('stroke-width', 2);
+      svg.append('circle').attr('cx', x(p.x)).attr('cy', y(p.y)).attr('r', s.dotsOnly ? 4 : 2.5).style('fill', stroke);
       points.push({ ...p, color: stroke, px: x(p.x), py: y(p.y) });
     });
   });
@@ -263,20 +262,14 @@ function chart(el, opt) {
   // End labels, nudged apart so they never overlap.
   const labels = labelled.map((s) => { const p = s.points.at(-1); return { text: s.label, color: s.color || 'var(--muted)', y: y(p.y), x: x(p.x) }; })
     .sort((a, b) => a.y - b.y);
-  for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 14);
+  for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 13);
   const overflow = labels.length ? labels.at(-1).y - (H - m.bottom) : 0;
   if (overflow > 0) labels.forEach((l) => { l.y -= overflow; });
-  for (let i = labels.length - 2; i >= 0; i--) labels[i].y = Math.min(labels[i].y, labels[i + 1].y - 14);
-  labels.forEach((l) => svg.append('text').attr('class', 'lbl').attr('x', l.x + 8).attr('y', l.y).attr('dy', '0.32em')
-    .style('fill', l.color).text(l.text));
+  labels.forEach((l) => svg.append('text').attr('class', 'lbl').attr('x', l.x + 6).attr('y', l.y).attr('dy', '0.32em').style('fill', l.color).text(l.text));
 
-  (opt.annotations || []).forEach((a) => svg.append('text').attr('x', x(a.x)).attr('y', y(a.y)).attr('dy', a.dy || 0)
-    .attr('text-anchor', a.anchor || 'start').style('fill', 'var(--muted)').text(a.text));
-
-  // The tooltip follows the nearest point, so small dots don't need to be hit exactly.
   const tip = Object.assign(document.createElement('div'), { className: 'tip', hidden: true });
   el.append(tip);
-  const ring = svg.append('circle').attr('r', 7).style('fill', 'none').attr('stroke-width', 1.5).attr('visibility', 'hidden');
+  const ring = svg.append('circle').attr('r', 6).style('fill', 'none').attr('stroke-width', 1.25).attr('visibility', 'hidden');
   svg.append('rect').attr('x', m.left).attr('y', m.top).attr('width', W - m.left - m.right).attr('height', H - m.top - m.bottom)
     .style('fill', 'transparent')
     .on('pointermove', (event) => {
@@ -288,20 +281,38 @@ function chart(el, opt) {
         ...near.lines.map((t) => Object.assign(document.createElement('div'), { textContent: t })));
       tip.hidden = false;
       const scale = el.clientWidth / W;
-      tip.style.left = Math.min(Math.max(0, near.px * scale + 14), el.clientWidth - tip.offsetWidth) + 'px';
-      tip.style.top = Math.max(0, near.py * scale - tip.offsetHeight - 10) + 'px';
+      tip.style.left = Math.min(Math.max(0, near.px * scale + 12), el.clientWidth - tip.offsetWidth) + 'px';
+      tip.style.top = Math.max(0, near.py * scale - tip.offsetHeight - 8) + 'px';
     })
     .on('pointerleave', () => { tip.hidden = true; ring.attr('visibility', 'hidden'); });
 }
 
-function drawFigures() {
+const find = (machine, name, threads) => data.configs.find((r) => r.machine === machine && r.name === name && r.threads === threads);
+
+function fillText() {
   const pct = (machine, threads) => data.configs.filter((r) => r.machine === machine && r.threads === threads).map((r) => r.pct);
-  const range = (v) => `${Math.round(d3.min(v))}–${Math.round(d3.max(v))}%`;
-  document.getElementById('f-pi4').textContent = range(pct('pi', 4));
-  document.getElementById('f-pc1').textContent = range(pct('pc', 1));
-  document.getElementById('f-pc8').textContent = range(pct('pc', 8));
-  const over = data.configs.filter((r) => r.measured > r.ceiling).length;
-  document.getElementById('f-over').textContent = `${over} of ${data.configs.length}`;
+  const range = (v) => `${f1(d3.min(v))}–${f1(d3.max(v))}%`;
+  const set = (id, text) => { document.getElementById(id).textContent = text; };
+  set('a-over', data.configs.filter((r) => r.measured > r.ceiling).length);
+  set('a-total', data.configs.length);
+  set('a-pi4', range(pct('pi', 4)));
+  set('a-pc1', range(pct('pc', 1)));
+  set('a-pc8', range(pct('pc', 8)));
+  set('t-q2pi1', `${f1(find('pi', 'Qwen 1.5B Q2', 1).pct)}%`);
+  set('t-q8pi1', `${f1(find('pi', 'Qwen 1.5B Q8', 1).pct)}%`);
+  const perLayer = (name) => data.extra.find((r) => r.name === name && r.threads === 8).perLayer;
+  set('t-q2pl', f2(perLayer('Qwen 1.5B Q2')));
+  set('t-q8pl', f2(perLayer('Qwen 1.5B Q8')));
+}
+
+function drawBandwidth() {
+  chart(document.getElementById('c-bandwidth'), {
+    label: 'Read bandwidth against threads for both machines', xDomain: [1, 8], yDomain: [0, 30],
+    xTicks: [1, 2, 3, 4, 6, 8], yTicks: [0, 10, 20, 30], yLabel: 'GB/s', xLabel: 'Threads',
+    series: [['pc', 'var(--series-a)', 'Ryzen 7 7700X'], ['pi', 'var(--series-b)', 'Raspberry Pi 5']].map(([m, color, label]) => ({ color, label,
+      points: data.bandwidth.filter((r) => r.machine === m).sort((a, b) => a.threads - b.threads)
+        .map((r) => ({ x: r.threads, y: r.gb_s, head: `${label}, ${plural(r.threads)}`, lines: [`${f2(r.gb_s)} GB/s, mean of ${r.repeats}`] })) })),
+  });
 }
 
 function drawRoofline() {
@@ -311,14 +322,13 @@ function drawRoofline() {
   chart(document.getElementById('c-roofline'), {
     label: 'Measured decode speed against the memory ceiling', logX: true, logY: true,
     xDomain: [0.5, 6], yDomain: [1.5, 50], xTicks: [0.5, 1, 2, 5], yTicks: [2, 5, 10, 20, 50],
-    yUnit: 'tok/s', xLabel: 'model size, GB',
+    yLabel: 'Decode (tok/s)', xLabel: 'Model size (GB)',
     series: [
-      { color: 'var(--faint)', dashed: true, noDots: true, points: [0.55, 5.4].map((s) => ({ x: s, y: bw.gb_s / s })) },
-      { color: 'var(--blue)', dotsOnly: true, points: picked.map((r) => ({ x: r.model_gb, y: r.measured,
-        head: `${LONG[r.name]}, ${plural(r.threads)}`,
-        lines: [`${f2(r.measured)} ± ${f2(r.sd)} measured`, `${f2(r.ceiling)} ceiling`, `${f1(r.pct)}% of ceiling`] })) },
+      { color: 'var(--muted)', dashed: true, noDots: true, label: 'Ceiling', points: [0.55, 5.4].map((s) => ({ x: s, y: bw.gb_s / s })) },
+      { color: 'var(--series-a)', dotsOnly: true, points: picked.map((r) => ({ x: r.model_gb, y: r.measured,
+        head: `${r.name}, ${plural(r.threads)}`,
+        lines: [`Measured ${f2(r.measured)} ± ${f2(r.sd)} tok/s`, `Ceiling ${f2(r.ceiling)} tok/s`, `${f1(r.pct)}% of ceiling`] })) },
     ],
-    annotations: [{ x: 0.56, y: bw.gb_s / 0.56, dy: -10, text: `ceiling at ${f2(bw.gb_s)} GB/s` }],
   });
 }
 
@@ -326,86 +336,78 @@ function drawThreads() {
   ['pi', 'pc'].forEach((machine) => {
     const rows = data.configs.filter((r) => r.machine === machine);
     const ticks = THREADS[machine];
-    const names = [...new Set(rows.map((r) => r.name))];
     chart(document.getElementById(`c-${machine}-threads`), {
       label: `Decode speed against threads on the ${MACHINE[machine]}`, xDomain: [ticks[0], ticks.at(-1)],
-      yDomain: [0, 30], yTicks: [0, 10, 20, 30], xTicks: ticks, yUnit: 'tok/s', xLabel: 'threads',
-      series: names.map((name) => ({ color: ACCENT[name], label: ACCENT[name] ? name : null,
+      yDomain: [0, 30], yTicks: [0, 10, 20, 30], xTicks: ticks, yLabel: 'Decode (tok/s)', xLabel: 'Threads',
+      series: Object.values(NAMES).map((name) => ({ color: ACCENT[name], label: ACCENT[name] ? SHORT[name] : null,
         points: rows.filter((r) => r.name === name).sort((a, b) => a.threads - b.threads)
-          .map((r) => ({ x: r.threads, y: r.measured, head: `${LONG[name]}, ${plural(r.threads)}`,
-            lines: [`${f2(r.measured)} tok/s`, `${f1(r.pct)}% of ceiling`] })) })),
+          .map((r) => ({ x: r.threads, y: r.measured, head: `${name}, ${plural(r.threads)}`,
+            lines: [`${f2(r.measured)} tok/s`, `${f1(r.pct)}% of ceiling`] })) })).filter((s) => s.points.length),
     });
   });
 }
 
 function drawOverhead() {
-  const names = [...new Set(data.extra.map((r) => r.name))];
   chart(document.getElementById('c-overhead'), {
-    label: 'PC extra milliseconds per layer against threads', xDomain: [1, 8], yDomain: [0, 1.4],
-    xTicks: [1, 2, 4, 6, 8], yTicks: [0, 0.4, 0.8, 1.2], fmtY: d3.format('.1f'), yUnit: 'extra ms per layer', xLabel: 'threads',
-    series: names.map((name) => ({ color: ACCENT[name], label: ACCENT[name] || name === 'Qwen 7B' ? name : null,
+    label: '7700X extra milliseconds per layer against threads', xDomain: [1, 8], yDomain: [0, 1.4],
+    xTicks: [1, 2, 4, 6, 8], yTicks: [0, 0.4, 0.8, 1.2], fmtY: d3.format('.1f'), yLabel: 'ms per layer', xLabel: 'Threads',
+    series: Object.values(NAMES).map((name) => ({ color: ACCENT[name], label: SHORT[name] || null,
       points: data.extra.filter((r) => r.name === name).sort((a, b) => a.threads - b.threads)
-        .map((r) => ({ x: r.threads, y: r.perLayer, head: `${LONG[name]}, ${plural(r.threads)}`,
+        .map((r) => ({ x: r.threads, y: r.perLayer, head: `${name}, ${plural(r.threads)}`,
           lines: [`${f2(r.perLayer)} ms per layer`, `${f1(r.extraMs)} ms per token, ${r.layers} layers`] })) })),
   });
 }
 
-function drawBandwidth() {
-  chart(document.getElementById('c-bandwidth'), {
-    label: 'Read bandwidth against threads for both machines', xDomain: [1, 8], yDomain: [0, 30],
-    xTicks: [1, 2, 3, 4, 6, 8], yTicks: [0, 10, 20, 30], yUnit: 'GB/s', xLabel: 'threads',
-    series: [['pc', 'var(--blue)', '7700X'], ['pi', 'var(--orange)', 'Pi 5']].map(([m, color, label]) => ({ color, label,
-      points: data.bandwidth.filter((r) => r.machine === m).sort((a, b) => a.threads - b.threads)
-        .map((r) => ({ x: r.threads, y: r.gb_s, head: `${label}, ${plural(r.threads)}`, lines: [`${f2(r.gb_s)} GB/s, mean of ${r.repeats}`] })) })),
-  });
-}
-
 function drawTable() {
-  const rows = [...data.configs].sort((a, b) => a.machine.localeCompare(b.machine) * -1 || a.threads - b.threads || a.model_gb - b.model_gb);
-  document.getElementById('table-body').replaceChildren(...rows.map((r) => {
-    const tr = document.createElement('tr');
-    [MACHINE[r.machine], LONG[r.name], r.threads, f3(r.model_gb), f2(r.ceiling), f2(r.measured), f2(r.sd), `${f1(r.pct)}%`].forEach((v, i) => {
-      const td = Object.assign(document.createElement('td'), { textContent: v });
-      if (i === 7 && r.pct < 80) td.className = 'low';
-      tr.append(td);
+  const body = document.getElementById('table-body');
+  body.replaceChildren();
+  ['pi', 'pc'].forEach((machine) => {
+    const group = document.createElement('tr');
+    group.className = 'group';
+    group.append(Object.assign(document.createElement('td'), { colSpan: 7, textContent: MACHINE[machine] }));
+    body.append(group);
+    data.configs.filter((r) => r.machine === machine).sort((a, b) => a.model_gb - b.model_gb || a.threads - b.threads).forEach((r) => {
+      const tr = document.createElement('tr');
+      [r.name, r.threads, f3(r.model_gb), f2(r.ceiling), f2(r.measured), f2(r.sd), f1(r.pct)].forEach((v) => {
+        tr.append(Object.assign(document.createElement('td'), { textContent: v }));
+      });
+      body.append(tr);
     });
-    return tr;
-  }));
-}
-
-function syncControls() {
-  document.querySelectorAll('.machine').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.machine === state.machine)));
-  document.querySelectorAll('.threads').forEach((b) => {
-    b.hidden = Boolean(b.dataset.only) && b.dataset.only !== state.machine;
-    b.setAttribute('aria-pressed', String(+b.dataset.threads === state.threads));
   });
 }
 
-function drawCharts() { drawRoofline(); drawThreads(); drawOverhead(); drawBandwidth(); }
-
-document.querySelectorAll('.machine').forEach((b) => b.addEventListener('click', () => {
-  state.machine = b.dataset.machine;
+const selMachine = document.getElementById('sel-machine');
+const selThreads = document.getElementById('sel-threads');
+function syncControls() {
+  selMachine.value = state.machine;
+  selThreads.replaceChildren(...THREADS[state.machine].map((t) => new Option(String(t), String(t))));
+  selThreads.value = String(state.threads);
+}
+selMachine.addEventListener('change', () => {
+  state.machine = selMachine.value;
   // Both machines ran 4 threads, so fall back to it when the picked count doesn't exist.
   if (!THREADS[state.machine].includes(state.threads)) state.threads = 4;
   syncControls();
   if (data) drawRoofline();
-}));
-document.querySelectorAll('.threads').forEach((b) => b.addEventListener('click', () => {
-  state.threads = +b.dataset.threads;
-  syncControls();
+});
+selThreads.addEventListener('change', () => {
+  state.threads = +selThreads.value;
   if (data) drawRoofline();
-}));
+});
+syncControls();
+
+function drawCharts() { drawBandwidth(); drawRoofline(); drawThreads(); drawOverhead(); }
 
 load().then((loaded) => {
   data = loaded;
-  drawFigures();
+  fillText();
   drawTable();
   drawCharts();
   let width = 0;
   new ResizeObserver(() => {
-    const w = document.querySelector('.page').clientWidth;
+    const w = document.querySelector('.report').clientWidth;
     if (w !== width) { width = w; drawCharts(); }
-  }).observe(document.querySelector('.page'));
+  }).observe(document.querySelector('.report'));
 }).catch((error) => {
   console.error(error);
   document.querySelectorAll('.chart').forEach((el) => el.replaceChildren(Object.assign(document.createElement('div'), { className: 'failed', textContent: 'The data files did not load.' })));
