@@ -194,11 +194,14 @@ const plural = (n) => `${n} ${n === 1 ? 'thread' : 'threads'}`;
 const state = { machine: 'pi', threads: 4 };
 let data = null;
 
-// Paths are relative to /site, so the page reads the same files the analysis scripts write.
+// Served from the repo, paths are relative to /site, so the page reads the files the analysis scripts write.
+// Opened as a plain file there is no server to resolve them, so it reads the published copies instead.
+const BASE = location.protocol.startsWith('http') ? '../' : 'https://yaseenmalam.dev/LLM-inference-characterization-raspi/';
+
 async function load() {
   const [piRoof, pcRoof, overhead, piBw, pcBw] = await Promise.all(
-    ['../analysis/roofline.csv', '../analysis/roofline_pc.csv', '../analysis/thread_overhead_pc.csv',
-      '../results/read_bw.csv', '../results/pc/read_bw.csv'].map((path) => d3.csv(path)));
+    ['analysis/roofline.csv', 'analysis/roofline_pc.csv', 'analysis/thread_overhead_pc.csv',
+      'results/read_bw.csv', 'results/pc/read_bw.csv'].map((path) => d3.csv(BASE + path)));
   const configs = [['pi', piRoof], ['pc', pcRoof]].flatMap(([machine, rows]) => rows.map((r) => ({
     machine, name: NAMES[`${r.model}|${r.quant}`], threads: +r.threads, model_gb: +r.model_gb,
     ceiling: +r.ceiling_tok_s, measured: +r.measured_tok_s, sd: +r.stddev_tok_s, pct: +r.pct_of_ceiling,
