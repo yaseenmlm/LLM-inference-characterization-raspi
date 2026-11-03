@@ -2,7 +2,11 @@
 
 **Is LLM decode on edge hardware limited by memory bandwidth?** I predicted decode speed from measured bandwidth and model size, compared the prediction with real runs on a Raspberry Pi 5, and explained the gap.
 
+**[Explore the results interactively](https://yaseenmlm.github.io/LLM-inference-characterization-raspi/site/)**
+
 **Result:** at 4 threads, all 7 models ran at 86-93% of the predicted ceiling, across file sizes from 0.68 GB to 4.68 GB. None of the 25 configs exceeded it. With fewer threads, some models are limited by the CPU instead, so decode has two limits rather than one.
+
+**On a desktop PC** (Ryzen 7 7700X), the ceiling also held: none of 35 configs exceeded it, and at 1 thread they reached 81-97% of it. But decode got slower as threads were added, by a fixed cost per layer that grows with threads and doesn't depend on model size. So memory sets the ceiling on both machines, but it isn't always what limits speed. [Details below](#pc-comparison).
 
 ![Measured decode speed against the memory ceiling at 4 threads](analysis/plots/1_roofline_4_threads.png)
 
@@ -114,6 +118,73 @@ Going from Q8 to Q4 cuts the file by 40% and worsens perplexity by 3.4%. Going f
 
 ![Perplexity against file size](analysis/plots/4_quality_vs_size.png)
 
+## PC comparison
+
+I ran the same models and workload on a desktop PC to test the prediction on a different chip, writing the prediction down before the decode sweep.
+
+| Item | Details |
+| --- | --- |
+| CPU | AMD Ryzen 7 7700X, 8 cores, one thread per core (mask `0x5555`) |
+| Memory | 2 x 16 GB DDR5, reported at 3600 MT/s |
+| OS | Windows 11 Home, Best Performance power mode |
+| Inference | llama.cpp `5047748`, GCC 16.2.0 (MinGW), `-DGGML_NATIVE=ON`, CPU only |
+| Thread counts | 1, 2, 4, 6 and 8 |
+
+Read bandwidth, in GB/s and the mean of 3 repeats, rises from 1 to 2 threads and then stays roughly flat, unlike the Pi's:
+
+| 1 thread | 2 threads | 4 threads | 6 threads | 8 threads |
+| ---: | ---: | ---: | ---: | ---: |
+| 22.73 | 24.28 | 24.84 | 25.42 | 24.52 |
+
+### Prediction versus measured
+
+The prediction is in [results/pc/prediction.md](results/pc/prediction.md), including a Q8 arithmetic error I corrected before seeing any speeds.
+
+| At 8 threads | Ceiling tok/s | Predicted tok/s | Measured tok/s | % of ceiling |
+| --- | ---: | ---: | ---: | ---: |
+| Qwen 1.5B Q2 | 36.26 | 32.4 | 16.77 | 46.2% |
+| Qwen 1.5B Q8 | 14.89 | 13.5 | 10.07 | 67.6% |
+
+I predicted 90% of the ceiling, and that was wrong. Across all 7 models at 8 threads, the share was 46-90%.
+
+### Decode gets slower with more threads
+
+Each cell is mean tok/s over 3 repeats. Standard deviation was 0.86 tok/s or less, and 0.36 or less outside Llama 1B at 1 thread.
+
+| Model | 1 thread | 2 threads | 4 threads | 6 threads | 8 threads |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen 1.5B Q2 | **27.25** | 25.86 | 22.05 | 18.87 | 16.77 |
+| Llama 1B Q4 | **26.85** | 25.63 | 24.03 | 21.42 | 19.94 |
+| Qwen 1.5B Q4 | **21.88** | 19.53 | 17.31 | 15.23 | 13.72 |
+| Qwen 1.5B Q5 | **18.25** | 17.38 | 15.65 | 14.06 | 12.54 |
+| Qwen 1.5B Q8 | 12.06 | **12.78** | 11.82 | 10.76 | 10.07 |
+| Llama 3B Q4 | **10.88** | 10.40 | 10.10 | 9.34 | 8.87 |
+| Qwen 7B Q4 | 4.68 | 5.04 | **5.09** | 4.88 | 4.71 |
+
+The fastest setting for each model is in bold. Clocks stayed above the 4.5 GHz base throughout, so this isn't throttling. Re-running Qwen Q2 at 8 threads unpinned, or with OpenMP's active wait policy, or with `--poll 100`, gave 15.91-16.76 tok/s, so those settings don't explain it either.
+
+Prefill still scales with threads. For example, Qwen Q2 prefill rises from 66.32 tok/s at 1 thread to 344.73 at 8.
+
+### The extra time is per layer, not per byte
+
+I split each token's time into what the ceiling predicts and the extra on top ([thread_overhead_pc.csv](analysis/thread_overhead_pc.csv)). At 8 threads:
+
+| Model | Layers | Size (GB) | Extra ms per token | Extra ms per layer |
+| --- | ---: | ---: | ---: | ---: |
+| Llama 1B Q4 | 16 | 0.808 | 17.2 | 1.08 |
+| Qwen 1.5B Q2 | 28 | 0.676 | 32.1 | 1.14 |
+| Qwen 1.5B Q4 | 28 | 0.986 | 32.7 | 1.17 |
+| Qwen 1.5B Q5 | 28 | 1.125 | 33.9 | 1.21 |
+| Qwen 1.5B Q8 | 28 | 1.647 | 32.1 | 1.15 |
+| Llama 3B Q4 | 28 | 2.019 | 30.4 | 1.08 |
+| Qwen 7B Q4 | 28 | 4.683 | 21.5 | 0.77 |
+
+If memory caused the extra time, it would grow with model size: Q8 is 2.4 times the size of Q2, but both have 32.1 ms. Instead it grows with threads. For the 6 models other than 7B, the mean extra per layer is 0.39 ms at 2 threads, 0.64 at 4, 0.96 at 6 and 1.14 at 8, while bandwidth barely changes.
+
+The likely cause is threads waiting for each other after each step of a layer. In decode each step handles a single token, so the waiting can cost more than extra threads save. I haven't measured the waiting, and 7B's lower value isn't explained.
+
+![PC decode speed and extra time per layer against threads](analysis/plots/5_pc_threads.png)
+
 ## Keeping the data clean
 
 A throttled run measures the cooler, not the memory, so no number counts unless the Pi held 2.4 GHz.
@@ -136,10 +207,16 @@ Those changes loosened the gate, and each one is recorded in the [gate history](
 - **Custom bandwidth test.** The read-only figure comes from my own [read_bw.c](scripts/read_bw.c), not a standard benchmark.
 - **Unrecorded power.** No tok/J figures are reported, because no USB-C power meter was available.
 - **Limited quality data.** Perplexity covers one model on 20 chunks of one dataset.
+- **Different PC software.** The PC ran Windows with MinGW GCC 16.2, and the Pi ran Linux with GCC 14.2. The PC thread slowdown may come from that build rather than the 7700X, so it isn't a finding about Zen 4.
+- **No PC temperature.** Windows has no throttle flags, so PC runs were checked by clock speed only.
+- **One-off PC oddities.** At 1 thread, Qwen Q5 prefill (133.58 tok/s) was faster than Q4 (61.55), the opposite of the Pi. I haven't explained it.
+- **Post-repair Pi.** After all Pi results were collected, the Pi was dropped and its cooler repaired. The repaired Pi passed the cooling gate, but none of its results are in this README.
 
 ## What I'd do next
 
-- Find out why bandwidth falls with threads.
+- Re-run the PC sweep on Linux, to tell whether the thread slowdown comes from the Windows build or the chip.
+- Profile PC decode at 8 threads to measure how long threads spend waiting.
+- Find out why the Pi's bandwidth falls with threads.
 - Use hardware performance counters to measure real memory traffic during decode, instead of inferring it.
 - Explain the Q8 prefill drop at 4 threads.
 - Measure CPU work per weight for each quant to test the Q2 explanation.
@@ -175,10 +252,28 @@ bash scripts/run_perplexity.sh
 
 The sweep skips finished configs, so it can resume after a crash. Set the governor to `performance` first, and run long jobs in `tmux`. The Pi must have `0x0` throttle flags for the gate to start.
 
-The analysis runs on any machine and needs matplotlib:
+On the PC, from Git Bash, with llama.cpp built at the same commit in `~/llama.cpp`, the models in `~/models`, GCC in `C:\gcc16` and Best Performance power mode on:
+
+```bash
+bash scripts/run_read_bw_pc.sh
+```
+
+```bash
+python scripts/run_sweep_pc.py
+```
+
+```bash
+python scripts/run_pc_check.py
+```
+
+The analysis needs matplotlib. `thread_overhead.py` also reads layer counts from the model files in `~/models`:
 
 ```bash
 python analysis/roofline.py
+```
+
+```bash
+python analysis/thread_overhead.py
 ```
 
 ```bash
@@ -191,7 +286,9 @@ python analysis/make_plots.py
 | --- | --- |
 | [scripts/](scripts) | Benchmark, cooling and download scripts |
 | [results/](results) | Raw data, including `sweep/rejected` and `sweep/suspect` |
+| [results/pc/](results/pc) | PC prediction, bandwidth, sweep, setup checks and the rejected first bandwidth run |
 | [analysis/](analysis) | Roofline calculation, plotting code and plots |
 | [docs/methodology.md](docs/methodology.md) | Full setup, gate history and method changes |
+| [site/](site) | Interactive results page, which reads the CSVs above directly |
 
 In `results/sweep/`, the valid thermal logs for re-run configs end in `_prefill_thermal.csv` or `_decode_thermal.csv`. Plain `_thermal.csv` files for those configs are from runs that were later replaced.

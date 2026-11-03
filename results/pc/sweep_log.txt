@@ -1,0 +1,71 @@
+[1/35] llama3.2-1b Q4_K_M t1
+OK llama3.2-1b_Q4_K_M_t1 [{'samples': 9, 'min_mhz': 4887.242332559999, 'mean_mhz': 4951.379172024444}, {'samples': 14, 'min_mhz': 4780.11533685, 'mean_mhz': 4949.754384255}]
+[2/35] llama3.2-1b Q4_K_M t2
+OK llama3.2-1b_Q4_K_M_t2 [{'samples': 4, 'min_mhz': 5082.55116488, 'mean_mhz': 5108.929928025}, {'samples': 15, 'min_mhz': 4968.83902613, 'mean_mhz': 5070.846575438}]
+[3/35] llama3.2-1b Q4_K_M t4
+OK llama3.2-1b_Q4_K_M_t4 [{'samples': 3, 'min_mhz': 5139.33875154, 'mean_mhz': 5158.627141896667}, {'samples': 16, 'min_mhz': 4946.29725296, 'mean_mhz': 5121.1317001775}]
+[4/35] llama3.2-1b Q4_K_M t6
+OK llama3.2-1b_Q4_K_M_t6 [{'samples': 2, 'min_mhz': 5146.00720809, 'mean_mhz': 5147.993656925}, {'samples': 18, 'min_mhz': 5039.91791793, 'mean_mhz': 5135.245792195556}]
+[5/35] llama3.2-1b Q4_K_M t8
+OK llama3.2-1b_Q4_K_M_t8 [{'samples': 1, 'min_mhz': 5138.134689030001, 'mean_mhz': 5138.134689030001}, {'samples': 19, 'min_mhz': 4897.431426300001, 'mean_mhz': 5008.913445104211}]
+[6/35] qwen2.5-1.5b Q2_K t1
+OK qwen2.5-1.5b_Q2_K_t1 [{'samples': 15, 'min_mhz': 4837.32201162, 'mean_mhz': 4898.060705108667}, {'samples': 14, 'min_mhz': 4826.68322297, 'mean_mhz': 4889.487524595001}]
+[7/35] qwen2.5-1.5b Q2_K t2
+OK qwen2.5-1.5b_Q2_K_t2 [{'samples': 11, 'min_mhz': 4987.11047555, 'mean_mhz': 5041.034963834545}, {'samples': 15, 'min_mhz': 4956.05704132, 'mean_mhz': 5022.071933036667}]
+[8/35] qwen2.5-1.5b Q2_K t4
+OK qwen2.5-1.5b_Q2_K_t4 [{'samples': 5, 'min_mhz': 5144.86386407, 'mean_mhz': 5157.034865135999}, {'samples': 17, 'min_mhz': 4889.7244990300005, 'mean_mhz': 4972.173806439411}]
+[9/35] qwen2.5-1.5b Q2_K t6
+OK qwen2.5-1.5b_Q2_K_t6 [{'samples': 4, 'min_mhz': 5175.01993393, 'mean_mhz': 5180.5369109025}, {'samples': 20, 'min_mhz': 4871.54658039, 'mean_mhz': 4928.258869821}]
+[10/35] qwen2.5-1.5b Q2_K t8
+OK qwen2.5-1.5b_Q2_K_t8 [{'samples': 3, 'min_mhz': 5152.31198384, 'mean_mhz': 5162.933218589999}, {'samples': 23, 'min_mhz': 4893.35293517, 'mean_mhz': 4966.214127079131}]
+[11/35] qwen2.5-1.5b Q4_K_M t1
+OK qwen2.5-1.5b_Q4_K_M_t1 [{'samples': 16, 'min_mhz': 4779.724425, 'mean_mhz': 4998.1038417275}, {'samples': 17, 'min_mhz': 4764.80158455, 'mean_mhz': 4926.674216783529}]
+[12/35] qwen2.5-1.5b Q4_K_M t2
+OK qwen2.5-1.5b_Q4_K_M_t2 [{'samples': 6, 'min_mhz': 4996.39347298, 'mean_mhz': 5079.747334445}, {'samples': 20, 'min_mhz': 4881.95667323, 'mean_mhz': 4944.443716404499}]
+[13/35] qwen2.5-1.5b Q4_K_M t4
+OK qwen2.5-1.5b_Q4_K_M_t4 [{'samples': 4, 'min_mhz': 5137.62562593, 'mean_mhz': 5151.816761315}, {'samples': 22, 'min_mhz': 4828.40526056, 'mean_mhz': 4921.394177445454}]
+[14/35] qwen2.5-1.5b Q4_K_M t6
+OK qwen2.5-1.5b_Q4_K_M_t6 [{'samples': 3, 'min_mhz': 5144.074253639999, 'mean_mhz': 5150.133574856666}, {'samples': 25, 'min_mhz': 4835.86292245, 'mean_mhz': 4908.9403878788}]
+[15/35] qwen2.5-1.5b Q4_K_M t8
+OK qwen2.5-1.5b_Q4_K_M_t8 [{'samples': 2, 'min_mhz': 5131.4556101200005, 'mean_mhz': 5137.678625205001}, {'samples': 28, 'min_mhz': 4845.12269472, 'mean_mhz': 4912.043458232501}]
+[16/35] qwen2.5-1.5b Q5_K_M t1
+OK qwen2.5-1.5b_Q5_K_M_t1 [{'samples': 7, 'min_mhz': 4876.48228697, 'mean_mhz': 4917.86657072}, {'samples': 21, 'min_mhz': 4684.44086558, 'mean_mhz': 4738.83777181}]
+[17/35] qwen2.5-1.5b Q5_K_M t2
+OK qwen2.5-1.5b_Q5_K_M_t2 [{'samples': 4, 'min_mhz': 4937.4300129, 'mean_mhz': 4996.16873805}, {'samples': 22, 'min_mhz': 4898.04320222, 'mean_mhz': 4965.503040419091}]
+[18/35] qwen2.5-1.5b Q5_K_M t4
+OK qwen2.5-1.5b_Q5_K_M_t4 [{'samples': 2, 'min_mhz': 5154.80612297, 'mean_mhz': 5170.2695560249995}, {'samples': 24, 'min_mhz': 4861.84458487, 'mean_mhz': 4940.643995084583}]
+[19/35] qwen2.5-1.5b Q5_K_M t6
+OK qwen2.5-1.5b_Q5_K_M_t6 [{'samples': 1, 'min_mhz': 5200.12228099, 'mean_mhz': 5200.12228099}, {'samples': 27, 'min_mhz': 4857.13748408, 'mean_mhz': 4917.85048286}]
+[20/35] qwen2.5-1.5b Q5_K_M t8
+OK qwen2.5-1.5b_Q5_K_M_t8 [{'samples': 1, 'min_mhz': 5184.50673664, 'mean_mhz': 5184.50673664}, {'samples': 30, 'min_mhz': 4826.57569408, 'mean_mhz': 4958.771690441334}]
+[21/35] qwen2.5-1.5b Q8_0 t1
+OK qwen2.5-1.5b_Q8_0_t1 [{'samples': 19, 'min_mhz': 4676.5723074, 'mean_mhz': 4807.301227606316}, {'samples': 32, 'min_mhz': 4677.137272919999, 'mean_mhz': 4803.675008356875}]
+[22/35] qwen2.5-1.5b Q8_0 t2
+OK qwen2.5-1.5b_Q8_0_t2 [{'samples': 8, 'min_mhz': 5040.93928485, 'mean_mhz': 5089.28877366875}, {'samples': 30, 'min_mhz': 4837.77265174, 'mean_mhz': 4917.510916917667}]
+[23/35] qwen2.5-1.5b Q8_0 t4
+OK qwen2.5-1.5b_Q8_0_t4 [{'samples': 4, 'min_mhz': 5110.76613348, 'mean_mhz': 5119.7877353349995}, {'samples': 32, 'min_mhz': 4787.19549987, 'mean_mhz': 4886.77561824375}]
+[24/35] qwen2.5-1.5b Q8_0 t6
+OK qwen2.5-1.5b_Q8_0_t6 [{'samples': 3, 'min_mhz': 5079.21605891, 'mean_mhz': 5096.462105513333}, {'samples': 35, 'min_mhz': 4884.44073012, 'mean_mhz': 5011.514226258}]
+[25/35] qwen2.5-1.5b Q8_0 t8
+OK qwen2.5-1.5b_Q8_0_t8 [{'samples': 3, 'min_mhz': 5047.96777639, 'mean_mhz': 5066.380227136667}, {'samples': 38, 'min_mhz': 4867.0726314, 'mean_mhz': 4939.347526551052}]
+[26/35] llama3.2-3b Q4_K_M t1
+OK llama3.2-3b_Q4_K_M_t1 [{'samples': 26, 'min_mhz': 4893.784446039999, 'mean_mhz': 4992.955751134616}, {'samples': 36, 'min_mhz': 4751.6466918900005, 'mean_mhz': 4859.819523706388}]
+[27/35] llama3.2-3b Q4_K_M t2
+OK llama3.2-3b_Q4_K_M_t2 [{'samples': 18, 'min_mhz': 4969.46502521, 'mean_mhz': 5082.044412293333}, {'samples': 37, 'min_mhz': 4663.5070746599995, 'mean_mhz': 4970.707057912703}]
+[28/35] llama3.2-3b Q4_K_M t4
+OK llama3.2-3b_Q4_K_M_t4 [{'samples': 9, 'min_mhz': 4995.58635366, 'mean_mhz': 5129.163665912222}, {'samples': 38, 'min_mhz': 4868.42662222, 'mean_mhz': 5100.757409023684}]
+[29/35] llama3.2-3b Q4_K_M t6
+OK llama3.2-3b_Q4_K_M_t6 [{'samples': 6, 'min_mhz': 5033.51047437, 'mean_mhz': 5111.97051106}, {'samples': 41, 'min_mhz': 5016.022919110001, 'mean_mhz': 5192.000504234634}]
+[30/35] llama3.2-3b Q4_K_M t8
+OK llama3.2-3b_Q4_K_M_t8 [{'samples': 5, 'min_mhz': 5072.314630600001, 'mean_mhz': 5106.00655103}, {'samples': 44, 'min_mhz': 4996.22495554, 'mean_mhz': 5189.232524763636}]
+[31/35] qwen2.5-7b Q4_K_M t1
+OK qwen2.5-7b_Q4_K_M_t1 [{'samples': 81, 'min_mhz': 4743.55803481, 'mean_mhz': 4887.771461784815}, {'samples': 84, 'min_mhz': 4719.21005535, 'mean_mhz': 4859.131397609167}]
+[32/35] qwen2.5-7b Q4_K_M t2
+OK qwen2.5-7b_Q4_K_M_t2 [{'samples': 37, 'min_mhz': 4857.5998268, 'mean_mhz': 5109.468142398919}, {'samples': 78, 'min_mhz': 4785.27375291, 'mean_mhz': 5017.495009822436}]
+[33/35] qwen2.5-7b Q4_K_M t4
+OK qwen2.5-7b_Q4_K_M_t4 [{'samples': 21, 'min_mhz': 4886.86591393, 'mean_mhz': 5121.721565336667}, {'samples': 77, 'min_mhz': 4917.06501335, 'mean_mhz': 5137.306365908182}]
+[34/35] qwen2.5-7b Q4_K_M t6
+OK qwen2.5-7b_Q4_K_M_t6 [{'samples': 15, 'min_mhz': 5013.9351752699995, 'mean_mhz': 5115.446906420666}, {'samples': 80, 'min_mhz': 4835.61014629, 'mean_mhz': 5173.593248021625}]
+[35/35] qwen2.5-7b Q4_K_M t8
+OK qwen2.5-7b_Q4_K_M_t8 [{'samples': 13, 'min_mhz': 4827.37943765, 'mean_mhz': 5077.571320801538}, {'samples': 83, 'min_mhz': 4981.03835649, 'mean_mhz': 5255.995480823373}]
+SWEEP_FINISHED

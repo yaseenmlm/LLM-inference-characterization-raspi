@@ -21,6 +21,7 @@ PLOTS = REPO / "analysis" / "plots"
 
 BLUE = "#2a78d6"
 ORANGE = "#eb6834"
+AQUA = "#1baf7a"
 INK = "#0b0b0b"
 SECONDARY = "#52514e"
 GRID = "#e1e0d9"
@@ -48,14 +49,18 @@ plt.rcParams.update({
 })
 
 
-def load_roofline():
-    with open(REPO / "analysis" / "roofline.csv", newline="") as file:
+def load_csv(name, numbers):
+    with open(REPO / "analysis" / name, newline="") as file:
         rows = list(csv.DictReader(file))
     for row in rows:
         row["threads"] = int(row["threads"])
-        for key in ("model_gb", "ceiling_tok_s", "measured_tok_s"):
+        for key in numbers:
             row[key] = float(row[key])
     return rows
+
+
+def load_roofline(name="roofline.csv"):
+    return load_csv(name, ("model_gb", "ceiling_tok_s", "measured_tok_s"))
 
 
 def load_triad():
@@ -184,6 +189,40 @@ def plot_quality(rows):
     save(figure, "4_quality_vs_size.png")
 
 
+def plot_pc_threads():
+    """Left: PC decode slows as threads are added. Right: the extra time is per layer, not per byte."""
+    speeds = load_roofline("roofline_pc.csv")
+    overhead = load_csv("thread_overhead_pc.csv", ("extra_ms_per_layer",))
+    figure, (left, right) = plt.subplots(1, 2, figsize=(10, 4.6))
+
+    # Marker shapes repeat the color coding, so the lines stay distinct without color.
+    series = [(("qwen2.5-1.5b", "Q2_K"), BLUE, "o"), (("qwen2.5-1.5b", "Q8_0"), ORANGE, "s"),
+              (("llama3.2-1b", "Q4_K_M"), AQUA, "^")]
+    for key, color, marker in series:
+        name = NAMES[key]
+        for axes, rows, field in ((left, speeds, "measured_tok_s"),
+                                  (right, overhead, "extra_ms_per_layer")):
+            points = sorted((r for r in rows if (r["model"], r["quant"]) == key),
+                            key=lambda r: r["threads"])
+            axes.plot([r["threads"] for r in points], [r[field] for r in points],
+                      marker=marker, color=color, label=name)
+
+    left.set_title("PC decode gets slower with more threads", loc="left", fontsize=11.5,
+                   fontweight="bold")
+    left.set_ylabel("Decode speed (tok/s)")
+    left.set_ylim(0, 30)
+    right.set_title("Extra time per layer tracks threads, not size", loc="left",
+                    fontsize=11.5, fontweight="bold")
+    right.set_ylabel("Extra ms per layer, above the ceiling")
+    right.set_ylim(0, 1.4)
+    for axes in (left, right):
+        axes.set_xlabel("Threads")
+        axes.set_xticks([1, 2, 4, 6, 8])
+    left.legend(loc="lower left")
+    figure.tight_layout()
+    save(figure, "5_pc_threads.png")
+
+
 def main():
     PLOTS.mkdir(exist_ok=True)
     rows = load_roofline()
@@ -191,6 +230,7 @@ def main():
     plot_two_limits(rows)
     plot_bandwidth()
     plot_quality(rows)
+    plot_pc_threads()
 
 
 if __name__ == "__main__":

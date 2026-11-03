@@ -1,0 +1,163 @@
+{
+  "model": "qwen2.5-1.5b",
+  "quant": "Q8_0",
+  "file": "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+  "threads": 8,
+  "started": 1793560436.3816383,
+  "phases": {
+    "prefill": {
+      "command": [
+        "C:\\Users\\Yaseen Malam\\llama.cpp\\build\\bin\\llama-bench.exe",
+        "-m",
+        "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+        "-t",
+        "8",
+        "-p",
+        "256",
+        "-n",
+        "0",
+        "-r",
+        "1",
+        "-o",
+        "json"
+      ],
+      "started": 1793560436.3816383,
+      "seconds": 1.8868811130523682,
+      "clock": {
+        "samples": 1,
+        "min_mhz": 5083.8450223400005,
+        "mean_mhz": 5083.8450223400005
+      },
+      "exit_code": 0,
+      "stderr": ""
+    },
+    "decode": {
+      "command": [
+        "C:\\Users\\Yaseen Malam\\llama.cpp\\build\\bin\\llama-bench.exe",
+        "-m",
+        "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+        "-t",
+        "8",
+        "-p",
+        "0",
+        "-n",
+        "128",
+        "-r",
+        "1",
+        "-o",
+        "json"
+      ],
+      "started": 1793560438.2773533,
+      "seconds": 13.212742328643799,
+      "clock": {
+        "samples": 12,
+        "min_mhz": 4906.26774449,
+        "mean_mhz": 4967.6334445325
+      },
+      "exit_code": 0,
+      "stderr": ""
+    }
+  },
+  "bench": [
+    {
+      "build_commit": "5047748f1",
+      "build_number": 12017,
+      "cpu_info": "AMD Ryzen 7 7700X 8-Core Processor             ",
+      "gpu_info": "",
+      "backends": "CPU",
+      "model_filename": "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+      "model_type": "qwen2 1.5B Q8_0",
+      "model_size": 1640622080,
+      "model_n_params": 1543714304,
+      "n_batch": 2048,
+      "n_ubatch": 512,
+      "n_threads": 8,
+      "cpu_mask": "0x0",
+      "cpu_strict": false,
+      "poll": 50,
+      "type_k": "f16",
+      "type_v": "f16",
+      "n_gpu_layers": -1,
+      "n_cpu_moe": 0,
+      "split_mode": "layer",
+      "main_gpu": 0,
+      "no_kv_offload": false,
+      "flash_attn": -1,
+      "devices": "auto",
+      "tensor_split": "0.00",
+      "tensor_buft_overrides": "none",
+      "load_mode": "auto",
+      "lazy_mode": "auto",
+      "embeddings": false,
+      "no_op_offload": 0,
+      "no_host": false,
+      "repack": true,
+      "fit_target": 0,
+      "fit_min_ctx": 0,
+      "n_prompt": 256,
+      "n_gen": 0,
+      "n_depth": 0,
+      "test_time": "2026-11-01T19:13:56Z",
+      "avg_ns": 709348200,
+      "stddev_ns": 0,
+      "avg_ts": 360.894692,
+      "stddev_ts": 0.0,
+      "samples_ns": [
+        709348200
+      ],
+      "samples_ts": [
+        360.895
+      ]
+    },
+    {
+      "build_commit": "5047748f1",
+      "build_number": 12017,
+      "cpu_info": "AMD Ryzen 7 7700X 8-Core Processor             ",
+      "gpu_info": "",
+      "backends": "CPU",
+      "model_filename": "Qwen2.5-1.5B-Instruct-Q8_0.gguf",
+      "model_type": "qwen2 1.5B Q8_0",
+      "model_size": 1640622080,
+      "model_n_params": 1543714304,
+      "n_batch": 2048,
+      "n_ubatch": 512,
+      "n_threads": 8,
+      "cpu_mask": "0x0",
+      "cpu_strict": false,
+      "poll": 50,
+      "type_k": "f16",
+      "type_v": "f16",
+      "n_gpu_layers": -1,
+      "n_cpu_moe": 0,
+      "split_mode": "layer",
+      "main_gpu": 0,
+      "no_kv_offload": false,
+      "flash_attn": -1,
+      "devices": "auto",
+      "tensor_split": "0.00",
+      "tensor_buft_overrides": "none",
+      "load_mode": "auto",
+      "lazy_mode": "auto",
+      "embeddings": false,
+      "no_op_offload": 0,
+      "no_host": false,
+      "repack": true,
+      "fit_target": 0,
+      "fit_min_ctx": 0,
+      "n_prompt": 0,
+      "n_gen": 128,
+      "n_depth": 0,
+      "test_time": "2026-11-01T19:13:58Z",
+      "avg_ns": 12554477100,
+      "stddev_ns": 0,
+      "avg_ts": 10.195566,
+      "stddev_ts": 0.0,
+      "samples_ns": [
+        12554477100
+      ],
+      "samples_ts": [
+        10.1956
+      ]
+    }
+  ]
+}

@@ -78,3 +78,51 @@ Qwen Q8 at 4 threads was set aside because its prefill looked low at 43.53 tok/s
 at 3 threads. The split re-run measured 42.78 with no throttling, so the low value reproduces.
 
 Any throttled phase rejects the whole config, whatever the gate result.
+
+## PC comparison
+
+Hardware: AMD Ryzen 7 7700X (8 cores, 16 threads, one CCD), 2 x 16 GB DDR5 reported at 3600 MT/s,
+Windows 11 Home 10.0.26200, Best Performance power mode on mains. Runs use the CPU only. The
+RTX 3060 Ti isn't used.
+
+Software: llama.cpp `5047748`, GCC 16.2.0 (WinLibs), `-DGGML_NATIVE=ON`, plus
+`-D_WIN32_WINNT=0x0A00` so that cpp-httplib compiles. The model files have the same SHA-256 values
+as the Pi's. The toolchain is copied to `C:\gcc16` because the GCC linker fails on the space in the
+user's folder name.
+
+Read bandwidth comes from `scripts/run_read_bw_pc.sh`. The first run is kept in
+`results/pc/rejected/read_bw_1ms_timer.csv` and isn't used: `omp_get_wtime` ticks every 1 ms on
+MinGW, so passes of about 45 ms landed on whole milliseconds, an error of about 2%. That run also
+wasn't pinned, because MinGW's OpenMP ignores `OMP_PLACES`. `read_bw.c` now uses
+`QueryPerformanceCounter` on Windows and limits itself to one logical CPU per core (mask `0x5555`).
+The change doesn't affect the Pi build.
+
+`scripts/run_sweep_pc.py` runs 7 models at 1, 2, 4, 6 and 8 threads with the Pi's workload: a
+256-token prefill call and a 128-token decode call, 3 repeats each. The process is pinned to mask
+`0x5555`, which was confirmed on a live `llama-bench` process. Windows has no throttle flags, so
+the script logs the effective clock at 1 Hz. This rule was set before the sweep ran: a config is
+rejected if any sample in either phase falls below the 4.5 GHz base clock. No CPU temperature was
+recorded on the PC.
+
+All 35 configs finished, with no clock sample below 4.5 GHz. Decode slowed as threads were added,
+so `scripts/run_pc_check.py` repeated Qwen Q2 decode at 8 threads with one setting changed at a
+time (`results/pc/checks/q2_t8_decode.json`):
+
+| Variant | tok/s | Std dev |
+| --- | ---: | ---: |
+| Sweep settings | 16.52 | 0.09 |
+| Unpinned | 15.91 | 0.49 |
+| `OMP_WAIT_POLICY=active` | 16.66 | 0.19 |
+| `--poll 100` | 16.76 | 0.60 |
+
+None of them restored the 1-thread speed of 27.25 tok/s, so pinning and these wait settings don't
+explain the slowdown. These checks don't rule out the Windows build itself.
+
+## Cooler repair
+
+On 2026-11-02 the Pi was dropped and the cooler came loose, after all Pi results above were
+collected. Before the repair, a 4-copy `yes` load reached 75.7°C in 90 seconds and stopped at the
+75°C guard. After it, the same load reached 52.7°C at 120 seconds, and `cooling_gate_20261102_133003`
+passed with a maximum of 70.8°C, 2.4 GHz and flags `0x0`. Read bandwidth at 4 threads was 12.72 GB/s
+against 12.74 before, and all seven model checksums matched. The governor was `ondemand` for these
+checks, and room temperature wasn't recorded. No results in the README come from after the repair.

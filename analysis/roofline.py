@@ -15,10 +15,10 @@ REPO = Path(__file__).resolve().parent.parent
 RESULTS = REPO / "results"
 
 
-def read_bandwidth():
+def read_bandwidth(results=RESULTS):
     """Returns mean read bandwidth in bytes per second for each thread count."""
     samples = defaultdict(list)
-    with open(RESULTS / "read_bw.csv", newline="") as file:
+    with open(results / "read_bw.csv", newline="") as file:
         for row in csv.DictReader(file):
             samples[int(row["threads"])].append(float(row["best_mb_s"]) * 1e6)
     return {threads: mean(values) for threads, values in samples.items()}
@@ -35,13 +35,14 @@ def decode_result(run):
     return entry["avg_ts"], entry["stddev_ts"]
 
 
-def main():
-    bandwidth = read_bandwidth()
+def analyze(results, out_path):
+    """Writes the roofline table for one machine. The PC uses the same model files as the Pi."""
+    bandwidth = read_bandwidth(results)
     sizes = model_bytes()
 
     rows = []
-    # Only finished configs sit at the top of results/sweep. Rejected runs have their own folders.
-    for path in sorted((RESULTS / "sweep").glob("*.json")):
+    # Only finished configs sit at the top of the sweep folder. Rejected runs have their own folders.
+    for path in sorted((results / "sweep").glob("*.json")):
         run = json.loads(path.read_text())
         threads = run["threads"]
         measured, stddev = decode_result(run)
@@ -56,7 +57,7 @@ def main():
         })
 
     rows.sort(key=lambda row: (row["threads"], row["model_gb"]))
-    with open(REPO / "analysis" / "roofline.csv", "w", newline="") as file:
+    with open(out_path, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=rows[0].keys())
         writer.writeheader()
         writer.writerows(rows)
@@ -65,6 +66,11 @@ def main():
         print(f"t{row['threads']} {row['model']:14} {row['quant']:7} {row['model_gb']:5.3f} GB  "
               f"ceiling {row['ceiling_tok_s']:6.2f}  measured {row['measured_tok_s']:6.2f}  "
               f"{row['pct_of_ceiling']:5.1f}%")
+
+
+def main():
+    analyze(RESULTS, REPO / "analysis" / "roofline.csv")
+    analyze(RESULTS / "pc", REPO / "analysis" / "roofline_pc.csv")
 
 
 if __name__ == "__main__":
